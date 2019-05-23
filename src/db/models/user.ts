@@ -4,10 +4,15 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import uniqueValidator from "mongoose-unique-validator";
 
+type AuthFunc = () => string;
+type CompareAuth = (password: string) => Promise<boolean>;
+
 export interface IUser extends mongoose.Document {
   email: string;
   username: string;
   password: string;
+  generateAuthToken: AuthFunc;
+  comparePassword: CompareAuth;
 }
 
 const UserSchema = new mongoose.Schema({
@@ -34,8 +39,6 @@ const UserSchema = new mongoose.Schema({
     enum: ["Admin", "User", "Guest"]
   }
 });
-
-const User = mongoose.model<IUser>("User", UserSchema);
 
 UserSchema.pre<IUser>("save", function(next) {
   if (!this.isModified("password")) {
@@ -78,6 +81,7 @@ UserSchema.methods.generateAuthToken = function() {
 UserSchema.plugin(uniqueValidator, {
   message: "Error, expected {PATH} to be unique."
 });
+const User = mongoose.model<IUser>("User", UserSchema);
 
 // Export the model and return your IUser interface
 export default User;
