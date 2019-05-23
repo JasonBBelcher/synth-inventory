@@ -1,7 +1,11 @@
 import express from "express";
 import path from "path";
+import dotenv from "dotenv";
 const app = express();
 const port = 8080; // default port to listen
+
+// init config
+dotenv.config();
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
