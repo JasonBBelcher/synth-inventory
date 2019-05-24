@@ -16,8 +16,19 @@ router
     Synth.find({})
       .populate("user", "username email -_id")
       .exec()
-      .then(results => {
+      .then((results: ISynth[]) => {
         return res.status(200).json(results);
+      })
+      .catch(err => {
+        return res.status(400).json({ error: { message: err.message } });
+      });
+  })
+  .get(`/synths/:id`, (req: Request, res: Response) => {
+    Synth.findById(req.params.id)
+      .populate("user", "username email -_id")
+      .exec()
+      .then((result: ISynth) => {
+        return res.status(200).json(result);
       })
       .catch(err => {
         return res.status(400).json({ error: { message: err.message } });
@@ -27,23 +38,50 @@ router
     `/synths/:id`,
     authenticate,
     (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-      Synth.findByIdAndUpdate(req.params.id, req.body, { new: true })
+      const userId = (req.user as ITokenId).data.id;
+      Synth.findById(req.params.id)
+        .populate("user", "username email -_id")
         .exec()
-        .then(results => {
+        .then((result: ISynth) => {
           if (
             (req.user as IUserRole).data.role === "Admin" ||
-            results.user.equals((req.user as ITokenId).data.id)
+            result.user.equals(userId)
           ) {
-            return res.status(201).json(results);
+            result.set(req.body);
+            result.save();
+            return res.status(201).json(result);
           } else {
             return Promise.reject(
               new Error("you do not have permission to edit this.")
-            ) as Promise<any>;
+            ) as Promise<object>;
           }
         })
         .catch(err => {
           console.log(err);
           return res.status(400).json({ error: { message: err.message } });
+        });
+    }
+  )
+  .delete(
+    `/synths/:id`,
+    authenticate,
+    (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+      Synth.findById(req.params.id)
+        .populate("user", "username email -_id")
+        .exec()
+        .then((result: ISynth) => {
+          if (
+            (req.user as IUserRole).data.role === "Admin" ||
+            result.user.equals((req.user as ITokenId).data.id)
+          ) {
+            result.remove();
+            result.save();
+            return res.status(201).json(result);
+          } else {
+            return Promise.reject(
+              new Error("you do not have permission to edit this.")
+            ) as Promise<object>;
+          }
         });
     }
   )
@@ -65,7 +103,7 @@ router
   )
   .post(`/user/register`, (req: Request, res: Response) => {
     User.create(req.body)
-      .then(user => {
+      .then((user: IUser) => {
         const { id, username } = user;
         const token = user.generateAuthToken();
         return res.status(201).json({ id, username, token });
@@ -84,7 +122,7 @@ router
       ]
     })
       .exec()
-      .then(user => {
+      .then((user: IUser) => {
         if (user === undefined || user === null) {
           return res
             .status(400)
