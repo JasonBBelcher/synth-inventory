@@ -1,26 +1,39 @@
-import express from "express";
-const router = express.Router();
+import { Express, Request, Response, Router } from "express";
+const router = Router();
 import Synth from "../db/models/synth";
 import User from "../db/models/user";
+import authenticate from "../middleware/auth";
+import { IGetUserAuthInfoRequest, ITokenId } from "../ts-definitions/index";
 
 router
-  .get(`/synths`, (req: express.Request, res: express.Response) => {
+  .get(`/synths`, (req: Request, res: Response) => {
     Synth.find({})
+      .populate("user", "username email -_id")
       .exec()
       .then(results => {
         return res.status(200).json(results);
-      });
-  })
-  .post(`/synths`, (req: express.Request, res: express.Response) => {
-    Synth.create(req.body)
-      .then(results => {
-        return res.status(201).json(results);
       })
       .catch(err => {
         return res.status(400).json({ error: { message: err.message } });
       });
   })
-  .post(`/user/register`, (req: express.Request, res: express.Response) => {
+  .post(
+    `/synths`,
+    authenticate,
+    (req: IGetUserAuthInfoRequest, res: Response) => {
+      const synthBody = Object.assign({}, req.body, {
+        user: (req.user as ITokenId).data.id
+      });
+      Synth.create(synthBody)
+        .then(results => {
+          return res.status(201).json(results);
+        })
+        .catch(err => {
+          return res.status(400).json({ error: { message: err.message } });
+        });
+    }
+  )
+  .post(`/user/register`, (req: Request, res: Response) => {
     User.create(req.body)
       .then(user => {
         const { id, username } = user;
@@ -31,9 +44,14 @@ router
         return res.status(400).json({ error: { message: err.message } });
       });
   })
-  .post(`/user/login`, (req: express.Request, res: express.Response) => {
+  .post(`/user/login`, (req: Request, res: Response) => {
     User.findOne({
-      email: req.body.email || req.body.username
+      $or: [
+        {
+          email: req.body.email
+        },
+        { username: req.body.username }
+      ]
     })
       .exec()
       .then(user => {
