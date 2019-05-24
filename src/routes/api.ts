@@ -1,9 +1,13 @@
-import { Express, Request, Response, Router } from "express";
+import { Express, NextFunction, Request, Response, Router } from "express";
 const router = Router();
 import Synth from "../db/models/synth";
 import User from "../db/models/user";
 import authenticate from "../middleware/auth";
-import { IGetUserAuthInfoRequest, ITokenId } from "../ts-definitions/index";
+import {
+  IGetUserAuthInfoRequest,
+  ISynth,
+  ITokenId
+} from "../ts-definitions/index";
 
 router
   .get(`/synths`, (req: Request, res: Response) => {
@@ -17,6 +21,27 @@ router
         return res.status(400).json({ error: { message: err.message } });
       });
   })
+  .patch(
+    `/synths/:id`,
+    authenticate,
+    (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+      Synth.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        .exec()
+        .then(results => {
+          if (results.user.equals((req.user as ITokenId).data.id)) {
+            return res.status(201).json(results);
+          } else {
+            return Promise.reject(
+              new Error("you do not have permission to edit this.")
+            ) as Promise<any>;
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          return res.status(400).json({ error: { message: err.message } });
+        });
+    }
+  )
   .post(
     `/synths`,
     authenticate,
