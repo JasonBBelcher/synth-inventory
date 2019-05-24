@@ -15,6 +15,7 @@ export interface IInput {
 }
 
 type AuthFunc = () => string;
+
 type CompareAuth = (password: string) => Promise<boolean>;
 
 export interface IUser extends Document {
@@ -29,7 +30,7 @@ export interface ISynth extends Document {
   brand: string;
   imgUrl?: string;
   modelNumber: string;
-  userId: IUser["_id"];
+  user: IUser["_id"];
   year?: string;
   description?: string;
 }
