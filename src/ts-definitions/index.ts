@@ -10,6 +10,11 @@ export interface ITokenId {
     id: string;
   };
 }
+export interface IUserRole {
+  data: {
+    role: string;
+  };
+}
 export interface IInput {
   db: string;
 }
@@ -22,6 +27,7 @@ export interface IUser extends Document {
   email: string;
   username: string;
   password: string;
+  role: string;
   generateAuthToken: AuthFunc;
   comparePassword: CompareAuth;
 }

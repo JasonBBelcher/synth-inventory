@@ -13,17 +13,12 @@ const db = process.env.MONGODB_DEV;
 app.use(morgan("dev"));
 app.use(cors());
 app.use(express.json());
-
-// init config
-
-app.set("views", path.join(__dirname, "views"));
-app.set("view engine", "ejs");
-
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
 app.get("/", (req, res) => {
-  res.render("index");
+  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
 });
+
 app.use("/api/", apiRoutes);
-// define a route handler for the default home page
 
 // start the Express server
 app.listen(port, () => {

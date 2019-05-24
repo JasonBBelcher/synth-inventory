@@ -1,7 +1,12 @@
 import { Express, NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-
-import { IGetUserAuthInfoRequest } from "../ts-definitions/index";
+import User from "../db/models/user";
+import {
+  IGetUserAuthInfoRequest,
+  ITokenId,
+  IUser,
+  IUserRole
+} from "../ts-definitions/index";
 
 const authenticate = (
   req: IGetUserAuthInfoRequest,
@@ -18,7 +23,12 @@ const authenticate = (
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     req.user = decoded;
-    console.log(decoded);
+    User.findById((req.user as ITokenId).data.id).then((user: IUser) => {
+      if (user.role === "Admin") {
+        (req.user as IUserRole).data.role = user.role;
+      }
+    });
+
     return next();
   } catch (ex) {
     return res.status(401).json({ error: { message: ex.message } });
