@@ -22,7 +22,7 @@ router
     authenticate,
     (req: IGetUserAuthInfoRequest, res: Response) => {
       const synthBody = Object.assign({}, req.body, {
-        userId: (req.user as ITokenId).data.id
+        user: (req.user as ITokenId).data.id
       });
       Synth.create(synthBody)
         .then(results => {
