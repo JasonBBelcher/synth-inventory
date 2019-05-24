@@ -3,17 +3,7 @@ import { NextFunction } from "connect";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import uniqueValidator from "mongoose-unique-validator";
-
-type AuthFunc = () => string;
-type CompareAuth = (password: string) => Promise<boolean>;
-
-export interface IUser extends mongoose.Document {
-  email: string;
-  username: string;
-  password: string;
-  generateAuthToken: AuthFunc;
-  comparePassword: CompareAuth;
-}
+import { IUser } from "../../ts-definitions";
 
 const UserSchema = new mongoose.Schema({
   email: {

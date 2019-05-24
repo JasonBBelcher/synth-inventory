@@ -1,15 +1,11 @@
 import mongoose from "mongoose";
-
-interface IInput {
-  db: string;
-}
+import { IInput } from "../ts-definitions";
 
 export default ({ db }: IInput) => {
   const connect = () => {
     mongoose
       .connect(db, { useNewUrlParser: true })
       .then(() => {
-        // tslint:disable-next-line:no-console
         return console.info(`Successfully connected to ${db}`);
       })
       .catch(error => {
