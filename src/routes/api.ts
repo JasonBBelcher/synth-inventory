@@ -6,7 +6,9 @@ import authenticate from "../middleware/auth";
 import {
   IGetUserAuthInfoRequest,
   ISynth,
-  ITokenId
+  ITokenId,
+  IUser,
+  IUserRole
 } from "../ts-definitions/index";
 
 router
@@ -28,7 +30,10 @@ router
       Synth.findByIdAndUpdate(req.params.id, req.body, { new: true })
         .exec()
         .then(results => {
-          if (results.user.equals((req.user as ITokenId).data.id)) {
+          if (
+            (req.user as IUserRole).data.role === "Admin" ||
+            results.user.equals((req.user as ITokenId).data.id)
+          ) {
             return res.status(201).json(results);
           } else {
             return Promise.reject(
