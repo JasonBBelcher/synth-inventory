@@ -37,3 +37,8 @@ export interface ISynth extends Document {
   description?: string;
   image: string;
 }
+
+export interface IReport {
+  deletedRecords: object;
+  deletedUser: object;
+}
