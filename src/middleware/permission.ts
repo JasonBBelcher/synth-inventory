@@ -1,6 +1,4 @@
-import { Express, NextFunction, Request, Response } from "express";
-
-import Synth from "../../src/db/models/synth";
+import { NextFunction, Response } from "express";
 import { IGetUserAuthInfoRequest, IToken } from "../ts-definitions/index";
 
 const checkPermission = (
@@ -21,8 +19,6 @@ const checkPermission = (
       }
     });
   }
-
-  return next();
 };
 
 export default checkPermission;

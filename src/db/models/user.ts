@@ -55,7 +55,7 @@ UserSchema.methods.comparePassword = function(
     .then(compared => {
       return compared;
     })
-    .catch(err => next(err));
+    .catch(err => next());
 };
 
 UserSchema.methods.generateAuthToken = function() {

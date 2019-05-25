@@ -6,6 +6,10 @@ import formidable from "express-formidable";
 import morgan from "morgan";
 import path from "path";
 import connect from "./db/init";
+import errorHandler from "./helpers/errorHelper";
+import authenticate from "./middleware/auth";
+import permission from "./middleware/permission";
+import adminRoutes from "./routes/admin.api";
 import apiRoutes from "./routes/api";
 
 const app = express();
@@ -22,6 +26,13 @@ app.use(express.static(path.join(__dirname, "../frontend/dist")));
 app.use("/uploads", express.static(uploadsBase));
 
 app.use("/api/", apiRoutes);
+app.use("/admin/", authenticate, permission, adminRoutes);
+
+app.use((req, res, next) => {
+  next({ status: 404, message: "not found" });
+});
+
+app.use(errorHandler);
 
 // start the Express server
 app.listen(port, () => {

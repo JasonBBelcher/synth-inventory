@@ -1,4 +1,4 @@
-import { Express, NextFunction, Request, Response, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 const router = Router();
 import formidable from "express-formidable";
 import path from "path";
@@ -67,8 +67,7 @@ router
           }
         })
         .catch(err => {
-          console.log(err);
-          return res.status(400).json({ error: { message: err.message } });
+          next({ status: err.status || 401, message: err.message });
         });
     }
   )
@@ -89,6 +88,9 @@ router
               new Error("you do not have permission to edit this.")
             ) as Promise<object>;
           }
+        })
+        .catch(err => {
+          next({ status: err.status || 401, message: err.message });
         });
     }
   )
@@ -99,7 +101,7 @@ router
       keepExtensions: true,
       uploadDir: uploadsBase
     }),
-    (req: IGetUserAuthInfoRequest, res: Response) => {
+    (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
       console.log(req.files.image);
 
       const imageURL = path.join(
@@ -115,13 +117,14 @@ router
           user: (req.user as IToken).data.id
         }
       );
-      console.log(synthBody);
+
       Synth.create(synthBody)
+
         .then(results => {
           return res.status(201).json(results);
         })
         .catch(err => {
-          return res.status(400).json({ error: { message: err.message } });
+          next({ status: err.status || 401, message: err.message });
         });
     }
   )
@@ -136,7 +139,7 @@ router
         return res.status(400).json({ error: { message: err.message } });
       });
   })
-  .post(`/user/login`, (req: Request, res: Response) => {
+  .post(`/user/login`, (req: Request, res: Response, next: NextFunction) => {
     User.findOne({
       $or: [
         {
@@ -150,7 +153,7 @@ router
         if (user === undefined || user === null) {
           return res
             .status(400)
-            .json({ error: { message: "User does not exist!" } });
+            .json({ err: { message: "User does not exist!" } });
         }
         const { id, username, email } = user;
         user.comparePassword(req.body.password).then(isMatch => {
@@ -165,11 +168,27 @@ router
           } else {
             return res
               .status(400)
-              .json({ error: { message: "invalid email or password" } });
+              .json({ err: { message: "invalid email or password" } });
           }
         });
       })
-      .catch(err => res.status(400).json({ error: { message: err.message } }));
-  });
+      .catch(err => {
+        return next({ status: 400, message: err.message || "bad request" });
+      });
+  })
+  .get(
+    "/user/me",
+    authenticate,
+    (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
+      User.findById((req.user as IToken).data.id)
+        .exec()
+        .then(me => {
+          res.status(200).json(me);
+        })
+        .catch(err => {
+          return next({ status: 400, message: err.message || "bad request" });
+        });
+    }
+  );
 
 export default router;
