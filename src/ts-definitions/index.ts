@@ -39,4 +39,5 @@ export interface ISynth extends Document {
   user: IUser["_id"];
   year?: string;
   description?: string;
+  image: string;
 }

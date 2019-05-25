@@ -1,5 +1,8 @@
 import { Express, NextFunction, Request, Response, Router } from "express";
 const router = Router();
+import formidable from "express-formidable";
+import path from "path";
+const uploadsBase = path.join(__dirname, "../../uploads/images");
 import Synth from "../db/models/synth";
 import User from "../db/models/user";
 import authenticate from "../middleware/auth";
@@ -88,10 +91,27 @@ router
   .post(
     `/synths`,
     authenticate,
+    formidable({
+      keepExtensions: true,
+      uploadDir: uploadsBase
+    }),
     (req: IGetUserAuthInfoRequest, res: Response) => {
-      const synthBody = Object.assign({}, req.body, {
-        user: (req.user as ITokenId).data.id
-      });
+      console.log(req.files.image);
+
+      const imageURL = path.join(
+        "/uploads",
+        path.basename(req.files.image.path)
+      );
+      console.log("imageURL: ", imageURL);
+      const synthBody = Object.assign(
+        {},
+        req.fields,
+        { image: imageURL },
+        {
+          user: (req.user as ITokenId).data.id
+        }
+      );
+      console.log(synthBody);
       Synth.create(synthBody)
         .then(results => {
           return res.status(201).json(results);

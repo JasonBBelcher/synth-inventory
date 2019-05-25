@@ -2,21 +2,23 @@ import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
+import formidable from "express-formidable";
 import morgan from "morgan";
 import path from "path";
 import connect from "./db/init";
 import apiRoutes from "./routes/api";
+
 const app = express();
 const port = process.env.SERVER_PORT; // default port to listen
 const db = process.env.MONGODB_DEV;
+const uploadsBase = path.join(__dirname, "../uploads/images");
 
 app.use(morgan("dev"));
 app.use(cors());
 app.use(express.json());
+
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
-});
+app.use("/uploads", express.static(uploadsBase));
 
 app.use("/api/", apiRoutes);
 

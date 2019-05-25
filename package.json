@@ -8,7 +8,7 @@
     "copy-assets": "ts-node tools/copyAssets",
     "lint": "tslint -c tslint.json -p tsconfig.json --fix",
     "tsc": "tsc",
-    "build": "npm-run-all clean lint tsc copy-assets",
+    "build": "npm-run-all clean lint tsc ",
     "dev:start": "npm-run-all build start",
     "dev": "nodemon --watch src -e ts,ejs --exec npm run dev:start",
     "start": "node .",
@@ -19,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/bcrypt": "^3.0.0",
+    "@types/express-formidable": "^1.0.3",
     "@types/jsonwebtoken": "^8.3.2",
     "@types/mongoose": "^5.5.1",
     "@types/mongoose-unique-validator": "^1.0.1",
@@ -27,8 +28,10 @@
     "dotenv": "^8.0.0",
     "ejs": "^2.6.1",
     "express": "^4.17.0",
+    "express-formidable": "^1.2.0",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.5.11",
+    "mongoose-thumbnail": "0.0.1",
     "mongoose-unique-validator": "^2.0.3",
     "morgan": "^1.9.1"
   },

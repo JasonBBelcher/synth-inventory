@@ -7,7 +7,8 @@ const SynthSchema: Schema = new Schema({
   modelNumber: { type: String, required: true },
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   year: { type: String },
-  description: { type: String }
+  description: { type: String },
+  image: { type: String }
 });
 
 export default mongoose.model<ISynth>("Synth", SynthSchema);
