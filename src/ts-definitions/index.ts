@@ -2,23 +2,19 @@ import { Request } from "express";
 import { Document } from "mongoose";
 
 export interface IGetUserAuthInfoRequest extends Request {
-  user: string | object;
+  user: IToken | string | object;
 }
 
-export interface ITokenId {
-  data: {
-    id: string;
-  };
-}
-export interface IUserRole {
-  data: {
-    role: string;
-  };
-}
 export interface IInput {
   db: string;
 }
 
+export interface IToken {
+  data: {
+    role: string;
+    id: string;
+  };
+}
 type AuthFunc = () => string;
 
 type CompareAuth = (password: string) => Promise<boolean>;
@@ -39,4 +35,5 @@ export interface ISynth extends Document {
   user: IUser["_id"];
   year?: string;
   description?: string;
+  image: string;
 }

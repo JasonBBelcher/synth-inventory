@@ -72,7 +72,4 @@ UserSchema.methods.generateAuthToken = function() {
 UserSchema.plugin(uniqueValidator, {
   message: "Error, expected {PATH} to be unique."
 });
-const User = mongoose.model<IUser>("User", UserSchema);
-
-// Export the model and return your IUser interface
-export default User;
+export default mongoose.model<IUser>("User", UserSchema);

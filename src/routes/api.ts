@@ -1,15 +1,28 @@
 import { Express, NextFunction, Request, Response, Router } from "express";
 const router = Router();
+import formidable from "express-formidable";
+import path from "path";
+const uploadsBase = path.join(__dirname, "../../uploads/images");
 import Synth from "../db/models/synth";
 import User from "../db/models/user";
 import authenticate from "../middleware/auth";
 import {
   IGetUserAuthInfoRequest,
   ISynth,
-  ITokenId,
-  IUser,
-  IUserRole
+  IToken,
+  IUser
 } from "../ts-definitions/index";
+
+function havePermission(DecodedUserToCheck: any, synthCreator: ISynth) {
+  if (
+    (DecodedUserToCheck as IToken).data.role === "Admin" ||
+    synthCreator.user.equals(DecodedUserToCheck.data.id)
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 router
   .get(`/synths`, (req: Request, res: Response) => {
@@ -38,15 +51,12 @@ router
     `/synths/:id`,
     authenticate,
     (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-      const userId = (req.user as ITokenId).data.id;
+      const userId = (req.user as IToken).data.id;
       Synth.findById(req.params.id)
         .populate("user", "username email -_id")
         .exec()
         .then((result: ISynth) => {
-          if (
-            (req.user as IUserRole).data.role === "Admin" ||
-            result.user.equals(userId)
-          ) {
+          if (havePermission(req.user, result)) {
             result.set(req.body);
             result.save();
             return res.status(201).json(result);
@@ -70,10 +80,7 @@ router
         .populate("user", "username email -_id")
         .exec()
         .then((result: ISynth) => {
-          if (
-            (req.user as IUserRole).data.role === "Admin" ||
-            result.user.equals((req.user as ITokenId).data.id)
-          ) {
+          if (havePermission(req.user, result)) {
             result.remove();
             result.save();
             return res.status(201).json(result);
@@ -88,10 +95,27 @@ router
   .post(
     `/synths`,
     authenticate,
+    formidable({
+      keepExtensions: true,
+      uploadDir: uploadsBase
+    }),
     (req: IGetUserAuthInfoRequest, res: Response) => {
-      const synthBody = Object.assign({}, req.body, {
-        user: (req.user as ITokenId).data.id
-      });
+      console.log(req.files.image);
+
+      const imageURL = path.join(
+        "/uploads",
+        path.basename(req.files.image.path)
+      );
+
+      const synthBody = Object.assign(
+        {},
+        req.fields,
+        { image: imageURL },
+        {
+          user: (req.user as IToken).data.id
+        }
+      );
+      console.log(synthBody);
       Synth.create(synthBody)
         .then(results => {
           return res.status(201).json(results);

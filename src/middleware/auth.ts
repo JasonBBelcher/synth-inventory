@@ -3,9 +3,8 @@ import jwt from "jsonwebtoken";
 import User from "../db/models/user";
 import {
   IGetUserAuthInfoRequest,
-  ITokenId,
-  IUser,
-  IUserRole
+  IToken,
+  IUser
 } from "../ts-definitions/index";
 
 const authenticate = (
@@ -23,9 +22,9 @@ const authenticate = (
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     req.user = decoded;
-    User.findById((req.user as ITokenId).data.id).then((user: IUser) => {
-      if (user.role === "Admin") {
-        (req.user as IUserRole).data.role = user.role;
+    User.findById((req.user as IToken).data.id).then((user: IUser) => {
+      if (user.role) {
+        (req.user as IToken).data.role = user.role;
       }
     });
 
