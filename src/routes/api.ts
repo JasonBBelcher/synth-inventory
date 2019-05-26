@@ -5,7 +5,9 @@ import path from "path";
 const uploadsBase = path.join(__dirname, "../../uploads/images");
 import Synth from "../db/models/synth";
 import User from "../db/models/user";
+import findUserByEmail from "../helpers/findUserEmail";
 import authenticate from "../middleware/auth";
+
 import {
   IGetUserAuthInfoRequest,
   ISynth,
@@ -128,16 +130,23 @@ router
         });
     }
   )
-  .post(`/user/register`, (req: Request, res: Response) => {
-    User.create(req.body)
-      .then((user: IUser) => {
-        const { id, username } = user;
-        const token = user.generateAuthToken();
-        return res.status(201).json({ id, username, token });
+  .post(`/user/register`, (req: Request, res: Response, next: NextFunction) => {
+    findUserByEmail(req.body.email)
+      .then(() => {
+        User.create(req.body)
+          .then((user: IUser) => {
+            const { id, username, email } = user;
+            const token = user.generateAuthToken();
+            return res.status(201).json({ id, username, token, email });
+          })
+          .catch(err =>
+            next({
+              status: 400,
+              message: err.message || "error registering user."
+            })
+          );
       })
-      .catch(err => {
-        return res.status(400).json({ error: { message: err.message } });
-      });
+      .catch(err => next({ status: 400, message: "email already exists.  " }));
   })
   .post(`/user/login`, (req: Request, res: Response, next: NextFunction) => {
     User.findOne({
