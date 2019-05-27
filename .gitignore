@@ -4,4 +4,4 @@ npm-debug.log
 .env
 .DS_Store
 dist
-uploads/images/**
+./uploads/images/*
