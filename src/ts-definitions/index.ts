@@ -4,6 +4,10 @@ import { Document } from "mongoose";
 export interface IGetUserAuthInfoRequest extends Request {
   user: IToken | string | object;
   getUrl: string;
+  imageName: string;
+  imageData: string;
+  imageType: string;
+  uploadError: Error;
 }
 
 export interface IInput {
@@ -36,7 +40,7 @@ export interface ISynth extends Document {
   user: IUser["_id"];
   year?: string;
   description?: string;
-  image: string;
+  image: { data: string; contentType: string };
 }
 
 export interface IReport {
