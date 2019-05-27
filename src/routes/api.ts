@@ -10,6 +10,7 @@ import havePermission from "../helpers/checkPermissions";
 import findUserByEmail from "../helpers/findUserEmail";
 
 import authenticate from "../middleware/auth";
+import uploadMiddleware from "../middleware/uploadMiddleware";
 import validate from "../middleware/validate";
 
 import {
@@ -103,23 +104,22 @@ router
   .post(
     `/synths`,
     authenticate,
-    upload.single("image"),
+    uploadMiddleware,
     (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
       const imageURL = path.join("/uploads", path.basename(req.file.path));
-      const synthBody = Object.assign(
-        {},
-        req.body,
-        {
-          image: `${req.getUrl}${imageURL}`
-        },
-        {
-          user: (req.user as IToken).data.id
-        }
-      );
+      const { brand, year, description, modelNumber } = req.body;
+      new Synth({
+        brand,
+        year,
+        imgUrl: imageURL,
+        image: { data: req.imageData, contentType: req.imageType },
+        description,
+        modelNumber,
+        user: (req.user as IToken).data.id
+      })
+        .save()
 
-      Synth.create(synthBody)
-
-        .then(results => {
+        .then((results: ISynth) => {
           return res.status(201).json(results);
         })
         .catch(err => {

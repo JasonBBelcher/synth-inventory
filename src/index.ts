@@ -23,10 +23,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 app.use("/uploads", express.static(uploadsBase));
-app.use((req: any, res: any, next: any) => {
-  req.getUrl = req.protocol + "://" + req.host + ":" + port;
-  return next();
-});
+// app.use((req: any, res: any, next: any) => {
+//   req.getUrl = req.protocol + "://" + req.host + ":" + port;
+//   return next();
+// });
 
 app.use("/api/", apiRoutes);
 app.use("/admin/", authenticate, permission, adminRoutes);
