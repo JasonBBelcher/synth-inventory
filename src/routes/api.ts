@@ -1,11 +1,17 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { Express, NextFunction, Request, Response, Router } from "express";
 const router = Router();
-import formidable from "express-formidable";
+import multer from "multer";
 import path from "path";
 const uploadsBase = path.join(__dirname, "../../uploads/images");
+import { validationResult } from "express-validator/check";
 import Synth from "../db/models/synth";
 import User from "../db/models/user";
+import havePermission from "../helpers/checkPermissions";
+import findUserByEmail from "../helpers/findUserEmail";
+
 import authenticate from "../middleware/auth";
+import validate from "../middleware/validate";
+
 import {
   IGetUserAuthInfoRequest,
   ISynth,
@@ -13,16 +19,16 @@ import {
   IUser
 } from "../ts-definitions/index";
 
-function havePermission(DecodedUserToCheck: any, synthCreator: ISynth) {
-  if (
-    (DecodedUserToCheck as IToken).data.role === "Admin" ||
-    synthCreator.user.equals(DecodedUserToCheck.data.id)
-  ) {
-    return true;
-  } else {
-    return false;
+const storage = multer.diskStorage({
+  destination: uploadsBase,
+  filename: (req, file, cb) => {
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
   }
-}
+});
+const upload = multer({ storage });
 
 router
   .get(`/synths`, (req: Request, res: Response) => {
@@ -97,22 +103,15 @@ router
   .post(
     `/synths`,
     authenticate,
-    formidable({
-      keepExtensions: true,
-      uploadDir: uploadsBase
-    }),
+    upload.single("image"),
     (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-      console.log(req.files.image);
-
-      const imageURL = path.join(
-        "/uploads",
-        path.basename(req.files.image.path)
-      );
-
+      const imageURL = path.join("/uploads", path.basename(req.file.path));
       const synthBody = Object.assign(
         {},
-        req.fields,
-        { image: imageURL },
+        req.body,
+        {
+          image: `${req.getUrl}${imageURL}`
+        },
         {
           user: (req.user as IToken).data.id
         }
@@ -128,17 +127,40 @@ router
         });
     }
   )
-  .post(`/user/register`, (req: Request, res: Response) => {
-    User.create(req.body)
-      .then((user: IUser) => {
-        const { id, username } = user;
-        const token = user.generateAuthToken();
-        return res.status(201).json({ id, username, token });
-      })
-      .catch(err => {
-        return res.status(400).json({ error: { message: err.message } });
-      });
-  })
+  .post(
+    `/user/register`,
+    validate("register"),
+    (req: Request, res: Response, next: NextFunction) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return next({
+          status: 422,
+          message: errors
+            .array()
+            .map((error: any) => `${error.msg}`)
+            .join(" & ")
+        });
+      }
+      findUserByEmail(req.body.email)
+        .then(() => {
+          User.create(req.body)
+            .then((user: IUser) => {
+              const { id, username, email } = user;
+              const token = user.generateAuthToken();
+              return res.status(201).json({ id, username, token, email });
+            })
+            .catch(err =>
+              next({
+                status: 400,
+                message: err.message || "error registering user."
+              })
+            );
+        })
+        .catch(err =>
+          next({ status: 400, message: "email already exists.  " })
+        );
+    }
+  )
   .post(`/user/login`, (req: Request, res: Response, next: NextFunction) => {
     User.findOne({
       $or: [

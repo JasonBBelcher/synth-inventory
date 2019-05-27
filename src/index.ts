@@ -2,7 +2,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
-import formidable from "express-formidable";
 import morgan from "morgan";
 import path from "path";
 import connect from "./db/init";
@@ -13,7 +12,7 @@ import adminRoutes from "./routes/admin.api";
 import apiRoutes from "./routes/api";
 
 const app = express();
-const port = process.env.SERVER_PORT; // default port to listen
+const port = process.env.SERVER_PORT || 3001; // default port to listen
 const db = process.env.MONGODB_DEV;
 const uploadsBase = path.join(__dirname, "../uploads/images");
 
@@ -24,6 +23,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 app.use("/uploads", express.static(uploadsBase));
+app.use((req: any, res: any, next: any) => {
+  req.getUrl = req.protocol + "://" + req.host + ":" + port;
+  return next();
+});
 
 app.use("/api/", apiRoutes);
 app.use("/admin/", authenticate, permission, adminRoutes);
