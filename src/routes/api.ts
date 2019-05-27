@@ -1,12 +1,14 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { Express, NextFunction, Request, Response, Router } from "express";
 const router = Router();
-import formidable from "express-formidable";
+import multer from "multer";
 import path from "path";
 const uploadsBase = path.join(__dirname, "../../uploads/images");
-import { check, validationResult } from "express-validator/check";
+import { validationResult } from "express-validator/check";
 import Synth from "../db/models/synth";
 import User from "../db/models/user";
+import havePermission from "../helpers/checkPermissions";
 import findUserByEmail from "../helpers/findUserEmail";
+
 import authenticate from "../middleware/auth";
 import validate from "../middleware/validate";
 
@@ -17,16 +19,16 @@ import {
   IUser
 } from "../ts-definitions/index";
 
-function havePermission(DecodedUserToCheck: any, synthCreator: ISynth) {
-  if (
-    (DecodedUserToCheck as IToken).data.role === "Admin" ||
-    synthCreator.user.equals(DecodedUserToCheck.data.id)
-  ) {
-    return true;
-  } else {
-    return false;
+const storage = multer.diskStorage({
+  destination: uploadsBase,
+  filename: (req, file, cb) => {
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
   }
-}
+});
+const upload = multer({ storage });
 
 router
   .get(`/synths`, (req: Request, res: Response) => {
@@ -101,22 +103,15 @@ router
   .post(
     `/synths`,
     authenticate,
-    formidable({
-      keepExtensions: true,
-      uploadDir: uploadsBase
-    }),
+    upload.single("image"),
     (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction) => {
-      console.log(req.files.image);
-
-      const imageURL = path.join(
-        "/uploads",
-        path.basename(req.files.image.path)
-      );
-
+      const imageURL = path.join("/uploads", path.basename(req.file.path));
       const synthBody = Object.assign(
         {},
-        req.fields,
-        { image: imageURL },
+        req.body,
+        {
+          image: `${req.getUrl}${imageURL}`
+        },
         {
           user: (req.user as IToken).data.id
         }

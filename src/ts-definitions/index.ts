@@ -3,6 +3,7 @@ import { Document } from "mongoose";
 
 export interface IGetUserAuthInfoRequest extends Request {
   user: IToken | string | object;
+  getUrl: string;
 }
 
 export interface IInput {
