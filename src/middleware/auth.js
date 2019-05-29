@@ -1,33 +1,33 @@
-import jwt from "jsonwebtoken";
-import User from "../db/models/user";
+import jwt from 'jsonwebtoken'
+import User from '../db/models/user'
 
 const authenticate = (req, res, next) => {
-  let token = req.header("Authorization");
+  let token = req.header('Authorization')
   if (!token) {
-    return next({ status: 401, message: "Access denied. No token provided." });
+    return next({ status: 401, message: 'Access denied. No token provided.' })
   }
-  const splitToken = token.split(" ");
+  const splitToken = token.split(' ')
 
-  if (splitToken[0] === "Bearer") {
-    token = splitToken[1];
+  if (splitToken[0] === 'Bearer') {
+    token = splitToken[1]
   } else {
-    return next({ status: 400, message: "Token format: 'Bearer [JWTTOKEN]' " });
+    return next({ status: 400, message: "Token format: 'Bearer [JWTTOKEN]' " })
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.SECRET_KEY);
-    req.user = decoded;
+    const decoded = jwt.verify(token, process.env.SECRET_KEY)
+    req.user = decoded
     User.findById(req.user.data.id)
       .then(user => {
         if (user.role) {
-          req.user.data.role = user.role;
+          req.user.data.role = user.role
         }
-        return next();
+        return next()
       })
-      .catch(err => next({ status: err.status || 401, message: err.message }));
+      .catch(err => next({ status: err.status || 401, message: err.message }))
   } catch (err) {
-    next({ status: err.status || 401, message: err.message });
+    next({ status: err.status || 401, message: err.message })
   }
-};
+}
 
-export default authenticate;
+export default authenticate
