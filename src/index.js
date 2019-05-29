@@ -12,7 +12,7 @@ import adminRoutes from "./routes/admin.api";
 import apiRoutes from "./routes/api";
 
 const app = express();
-const port = process.env.SERVER_PORT || 3001; // default port to listen
+
 const db = process.env.MONGODB_DEV;
 const uploadsBase = path.join(__dirname, "../uploads/images");
 
@@ -23,10 +23,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 app.use("/uploads", express.static(uploadsBase));
-// app.use((req: any, res: any, next: any) => {
-//   req.getUrl = req.protocol + "://" + req.host + ":" + port;
-//   return next();
-// });
 
 app.use("/api/", apiRoutes);
 app.use("/admin/", authenticate, permission, adminRoutes);
@@ -37,9 +33,5 @@ app.use((req, res, next) => {
 
 app.use(errorHandler);
 
-// start the Express server
-app.listen(port, () => {
-  // tslint:disable-next-line:no-console
-  console.log(`server started at http://localhost:${port}`);
-});
+export default app;
 connect({ db });

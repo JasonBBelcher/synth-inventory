@@ -1,32 +1,31 @@
-import { Express, NextFunction, Request, Response, Router } from "express";
-const router = Router();
+import express from "express";
+const router = express.Router();
 import Synth from "../db/models/synth";
 import User from "../db/models/user";
-import { IReport, ISynth, IUser } from "../ts-definitions/index";
-const report: IReport = { deletedRecords: null, deletedUser: null };
 
 router
-  .get(`/users`, (req: Request, res: Response, next: NextFunction) => {
+  .get(`/users`, (req, res, next) => {
     User.find({})
       .exec()
-      .then((users: IUser[]) => {
+      .then(users => {
         return res.status(200).json(users);
       })
       .catch(err => next({ status: err.status, message: err.message }));
   })
-  .patch(`/user/:id`, (req: Request, res: Response, next: NextFunction) => {
+  .patch(`/user/:id`, (req, res, next) => {
     console.log("id: ", req.params.id);
     User.findByIdAndUpdate(req.params.id, req.body, { new: true })
       .exec()
-      .then((editedUser: IUser) => {
+      .then(editedUser => {
         return res.status(200).json(editedUser);
       })
       .catch(err => next({ status: err.status, message: err.message }));
   })
-  .delete(`/user/:id`, (req: Request, res: Response, next: NextFunction) => {
+  .delete(`/user/:id`, (req, res, next) => {
     User.findByIdAndDelete(req.params.id)
-      .then((deletedUser: IUser) => {
+      .then(deletedUser => {
         Synth.deleteMany({ user: req.params.id }).then(result => {
+          const report = {};
           report.deletedRecords = result;
           report.deletedUser = deletedUser;
           return res.status(200).json(report);

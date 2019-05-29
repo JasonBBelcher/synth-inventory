@@ -3,20 +3,14 @@ import multer from "multer";
 import path from "path";
 import rimraf from "rimraf";
 
-import { NextFunction, Request, Response } from "express";
-import { IGetUserAuthInfoRequest } from "../ts-definitions";
 const uploadsBase = path.join(__dirname, "../../uploads/images");
 
-const uploadMiddleware = (
-  req: IGetUserAuthInfoRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  let imageName: any;
-  let fileExt: string;
+const uploadMiddleware = (req, res, next) => {
+  let imageName;
+  let fileExt;
   const storage = multer.diskStorage({
     destination: uploadsBase,
-    // tslint:disable-next-line: no-shadowed-variable
+
     filename: (req, file, cb) => {
       fileExt = path.extname(file.originalname);
       cb(null, (imageName = file.fieldname + "-" + Date.now() + fileExt));
@@ -35,7 +29,6 @@ const uploadMiddleware = (
     }
     req.imageType = `image/${fileExt.split(".")[1]}`;
 
-    // tslint:disable-next-line:no-shadowed-variable
     rimraf("./uploads/images/*", err => {
       if (err) {
         console.error(err);

@@ -1,9 +1,8 @@
 import bcrypt from "bcrypt";
-import { NextFunction } from "connect";
+
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import uniqueValidator from "mongoose-unique-validator";
-import { IUser } from "../../ts-definitions";
 
 const UserSchema = new mongoose.Schema({
   email: {
@@ -11,7 +10,7 @@ const UserSchema = new mongoose.Schema({
     required: true,
     unique: true,
     trim: true,
-    set: (v: { toLowerCase: () => void }) => v.toLowerCase()
+    set: v => v.toLowerCase().trim()
   },
   username: {
     type: String,
@@ -31,7 +30,7 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-UserSchema.pre<IUser>("save", function(next) {
+UserSchema.pre("save", function(next) {
   if (!this.isModified("password")) {
     next();
   }
@@ -44,10 +43,7 @@ UserSchema.pre<IUser>("save", function(next) {
     .catch(err => next(err));
 });
 
-UserSchema.methods.comparePassword = function(
-  password: string,
-  next: NextFunction
-) {
+UserSchema.methods.comparePassword = function(password, next) {
   const user = this;
 
   return bcrypt
@@ -72,4 +68,4 @@ UserSchema.methods.generateAuthToken = function() {
 UserSchema.plugin(uniqueValidator, {
   message: "Error, expected {PATH} to be unique."
 });
-export default mongoose.model<IUser>("User", UserSchema);
+export default mongoose.model("User", UserSchema);

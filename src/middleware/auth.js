@@ -1,18 +1,7 @@
-import { Express, NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../db/models/user";
 
-import {
-  IGetUserAuthInfoRequest,
-  IToken,
-  IUser
-} from "../ts-definitions/index";
-
-const authenticate = (
-  req: IGetUserAuthInfoRequest,
-  res: Response,
-  next: NextFunction
-) => {
+const authenticate = (req, res, next) => {
   let token = req.header("Authorization");
   if (!token) {
     return next({ status: 401, message: "Access denied. No token provided." });
@@ -28,10 +17,10 @@ const authenticate = (
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     req.user = decoded;
-    User.findById((req.user as IToken).data.id)
-      .then((user: IUser) => {
+    User.findById(req.user.data.id)
+      .then(user => {
         if (user.role) {
-          (req.user as IToken).data.role = user.role;
+          req.user.data.role = user.role;
         }
         return next();
       })

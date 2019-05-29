@@ -1,10 +1,9 @@
-import { IUser } from "../../src/ts-definitions";
 import User from "../db/models/user";
 
-export default function findUserByEmail(email: string) {
+export default function findUserByEmail(email) {
   return User.findOne({ email })
     .exec()
-    .then((foundUser: IUser) => {
+    .then(foundUser => {
       if (foundUser) {
         return Promise.reject();
       }

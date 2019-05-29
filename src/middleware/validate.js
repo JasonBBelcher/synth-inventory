@@ -2,7 +2,7 @@
 
 import { body } from "express-validator/check";
 
-export default (method: string) => {
+export default method => {
   switch (method) {
     case "register": {
       return [

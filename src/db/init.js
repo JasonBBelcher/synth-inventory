@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
-import { IInput } from "../ts-definitions";
 
-export default ({ db }: IInput) => {
+export default ({ db }) => {
   const connect = () => {
     mongoose
       .connect(db, { useNewUrlParser: true })
