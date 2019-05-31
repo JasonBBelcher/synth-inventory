@@ -1,7 +1,7 @@
-export default function havePermission(DecodedUserToCheck, synthCreator) {
+export default function havePermission(DecodedUserToCheck, createdBy) {
   if (
     DecodedUserToCheck.data.role === 'Admin' ||
-    synthCreator.user.equals(DecodedUserToCheck.data.id)
+    createdBy.user.equals(DecodedUserToCheck.data.id)
   ) {
     return true
   } else {

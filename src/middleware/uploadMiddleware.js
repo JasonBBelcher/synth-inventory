@@ -12,7 +12,9 @@ const uploadMiddleware = (req, res, next) => {
     destination: uploadsBase,
 
     filename: (req, file, cb) => {
-      fileExt = path.extname(file.originalname)
+      if (file.originalname) {
+        fileExt = path.extname(file.originalname)
+      }
       cb(null, (imageName = file.fieldname + '-' + Date.now() + fileExt))
     }
   })
@@ -21,11 +23,15 @@ const uploadMiddleware = (req, res, next) => {
 
   uploadFile(req, res, err => {
     if (req.file) {
-      req.imageData = new Buffer(fs.readFileSync(req.file.path)).toString(
-        'base64'
-      )
+      if (req.file.size > 50000) {
+        return next({ status: 400, message: 'file size is too large.' })
+      } else {
+        req.imageData = new Buffer(fs.readFileSync(req.file.path)).toString(
+          'base64'
+        )
+      }
     } else {
-      return next({ status: 400, message: 'file size is too large.' })
+      return next()
     }
     req.imageType = `image/${fileExt.split('.')[1]}`
 

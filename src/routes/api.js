@@ -1,7 +1,7 @@
 import { Express, NextFunction, Request, Router } from 'express'
 import multer from 'multer'
 import path from 'path'
-import { validationResult } from 'express-validator/check'
+import { validationResult, oneOf } from 'express-validator/check'
 import Synth from '../db/models/synth'
 import User from '../db/models/user'
 import havePermission from '../helpers/checkPermissions'
@@ -47,36 +47,52 @@ router
         return res.status(400).json({ error: { message: err.message } })
       })
   })
-  .patch(`/synths/:id`, authenticate, (req, res, next) => {
-    const userId = req.user.data.id
-    Synth.findById(req.params.id)
-      .populate('user', 'username email -_id')
-      .exec()
-      .then(result => {
-        if (havePermission(req.user, result)) {
-          result.set(req.body)
-          result.save()
-          return res.status(201).json(result)
-        } else {
-          return Promise.reject(
-            new Error('you do not have permission to edit this.')
-          )
-        }
-      })
-      .catch(err => {
-        next({ status: err.status || 401, message: err.message })
-      })
-  })
+  .patch(
+    `/synths/:id`,
+    authenticate,
+    uploadMiddleware,
+    oneOf(validate('edit')),
+    (req, res, next) => {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return next({
+          status: 422,
+          message: errors
+            .array()
+            .map(error => `${error.msg}`)
+            .join(' & ')
+        })
+      }
+      Synth.findById(req.params.id)
+        .populate('user', 'username email id')
+        .exec()
+        .then(result => {
+          if (result.user.id === req.user.data.id) {
+            result.set(req.body)
+            result.save()
+            return res.status(201).json(result)
+          }
+          if (!havePermission(req.user, result)) {
+            return Promise.reject(
+              new Error('you do not have permission to edit this.')
+            )
+          }
+        })
+        .catch(err => {
+          next({ status: err.status || 401, message: err.message })
+        })
+    }
+  )
   .delete(`/synths/:id`, authenticate, (req, res, next) => {
     Synth.findById(req.params.id)
-      .populate('user', 'username email -_id')
+      .populate('user', 'username email id')
       .exec()
       .then(result => {
-        if (havePermission(req.user, result)) {
+        if (result.user.id === req.user.data.id) {
           result.remove()
           result.save()
           return res.status(201).json(result)
-        } else {
+        } else if (!havePermission(req.user, result)) {
           return Promise.reject(
             new Error('you do not have permission to edit this.')
           )
@@ -87,12 +103,14 @@ router
       })
   })
   .post(`/synths`, authenticate, uploadMiddleware, (req, res, next) => {
-    const imageURL = path.join('/uploads', path.basename(req.file.path))
+    if (!req.file) {
+      return next({ status: 400, message: 'no image file sent' })
+    }
+
     const { brand, year, description, modelNumber } = req.body
     new Synth({
       brand,
       year,
-      imgUrl: imageURL,
       image: { data: req.imageData, contentType: req.imageType },
       description,
       modelNumber,
@@ -135,14 +153,19 @@ router
       })
       .catch(err => next({ status: 400, message: 'email already exists.  ' }))
   })
-  .post(`/user/login`, (req, res, next) => {
+  .post(`/user/login`, validate('login'), (req, res, next) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return next({
+        status: 422,
+        message: errors
+          .array()
+          .map(error => `${error.msg}`)
+          .join(' & ')
+      })
+    }
     User.findOne({
-      $or: [
-        {
-          email: req.body.email
-        },
-        { username: req.body.username }
-      ]
+      email: req.body.email
     })
       .exec()
       .then(user => {
